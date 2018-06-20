@@ -9,6 +9,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
 from bs4 import BeautifulSoup
 
+
 options = Options()
 options.set_headless(headless=True)
 browser = webdriver.Firefox(firefox_options=options, executable_path=r"C:\Users\noahg\AppData\Local\atom\app-1.27.1\geckodriver.exe")
@@ -16,6 +17,23 @@ browser = webdriver.Firefox(firefox_options=options, executable_path=r"C:\Users\
 artist = "drake"
 birthplace = "birthplace of "+artist
 
+
+    # Search for query
+query = birthplace
+
+browser.get('http://www.google.com/search?q=' + query)
+
+    # Get text from Google answer box
+
+answer = browser.execute_script(
+            "return document.elementFromPoint(arguments[0], arguments[1]);",
+            360, 420).text
+
+print(answer)
+
+
+
+"""
 
 url = "https://www.google.com/"
 browser.get(url)
@@ -25,6 +43,8 @@ search = browser.find_element_by_name('q')
 search.send_keys(birthplace)
 search.send_keys(Keys.RETURN)
 time.sleep(2)
+
+
 new_url = browser.current_url
 page = requests.get(new_url)
 content = page.content
@@ -39,5 +59,5 @@ city = soup.find("div",{"id":"main"})
 
 print(city)
 
-
 browser.quit()
+"""
