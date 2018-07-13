@@ -1,31 +1,38 @@
 from selenium import webdriver
 import bs4
+from selenium.webdriver.support.ui import WebDriverWait
+import time
 from bs4 import BeautifulSoup as soup
 from selenium.webdriver.firefox.options import Options
 
-#######test#####
+def getPrices(browser):
+    browser.find_element_by_css_selector('.more.button.button-tertiary.flat').click()
+    browser.get(browser.current_url)
+
+    innerHTML = browser.execute_script('return document.body.innerHTML')
+    browser.implicitly_wait(3)
+    browser.find_element_by_css_selector('.modal-dialog__button.landing-modal-footer__skip-button').click()
+    time.sleep(10)
+    innerHTML = browser.execute_script('return document.body.innerHTML')
+
+    browser.implicitly_wait(3)
+    if(len(soup(innerHTML, 'html.parser').find_all('button', {'class','.modal-dialog__button.landing-modal-footer__skip-button'})) > 0):
+        browser.find_element_by_css_selector('.modal-dialog__button.landing-modal-footer__skip-button').click()
+
+    browser.get(browser.current_url)
+    browser.find_element_by_css_selector('.zoomer__control--zoomin').click()
+    time.sleep(10)
+    innerHTML = browser.execute_script('return document.body.innerHTML')
+    page_soup = soup(innerHTML, 'html.parser')
+    seats = page_soup.find_all('g', {'class', 'seats'})[0]
+    print(len(seats.find_all('circle',{'class','seats'})))
+    ##print(num_empty_seats)
+    return;
+
 options = Options()
 options.set_headless(headless=True)
-browser = webdriver.Firefox(firefox_options=options, executable_path=r'C:\Users\dev\OneDrive\Documents\Python Workspace\geckodriver.exe')
+browser = webdriver.Firefox()
 
-url = "https://www.ticketmaster.com/artist/1480454?tm_link=tm_homeA_header_search"
-browser.get(url)
-innerHTML = browser.execute_script("return document.body.innerHTML")
-
-f = open("Event_Details.csv","w")
-f.write('Venue, City, State, Time\n')
-
-page_soup = soup(innerHTML, "html.parser")
-getEventDetails(page_soup = page_soup)
-
+browser.get('https://www.ticketmaster.com/search?tm_link=tm_header_search&user_input=migos&q=migos')
+getPrices(browser)
 browser.close()
-
-
-def getEventDetails(page_soup):
-    info = page_soup.find_all("div", {"class":"padH10"})
-    for event in info:
-        children = event.contents
-        print(children[0].text.split('-')[0] + "," + children[1].text + "," + children[3].text + "," + children[5] + "\n")
-        f.write(children[0].text.split('-')[0] + "," + children[1].text + "," + children[3].text + "," + children[5] + "\n")
-
-    return;
