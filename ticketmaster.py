@@ -10,23 +10,22 @@ def getPrices(browser):
     browser.get(browser.current_url)
 
     innerHTML = browser.execute_script('return document.body.innerHTML')
-    browser.implicitly_wait(3)
     browser.find_element_by_css_selector('.modal-dialog__button.landing-modal-footer__skip-button').click()
     time.sleep(10)
     innerHTML = browser.execute_script('return document.body.innerHTML')
 
-    browser.implicitly_wait(3)
     if(len(soup(innerHTML, 'html.parser').find_all('button', {'class','.modal-dialog__button.landing-modal-footer__skip-button'})) > 0):
-        browser.find_element_by_css_selector('.modal-dialog__button.landing-modal-footer__skip-button').click()
+        browser.find_element_by_css_selector('.modal-dialog__button.landing-modal-footer__see-tickets-button').click()
 
-    browser.get(browser.current_url)
     browser.find_element_by_css_selector('.zoomer__control--zoomin').click()
-    time.sleep(10)
+    time.sleep(1)
     innerHTML = browser.execute_script('return document.body.innerHTML')
+    browser.find_element_by_css_selector('.zoomer__control--zoomin').click()
+
     page_soup = soup(innerHTML, 'html.parser')
     seats = page_soup.find_all('g', {'class', 'seats'})[0]
-    print(len(seats.find_all('circle',{'class','seats'})))
-    ##print(num_empty_seats)
+    numseats = seats.find_all('g', {'class', 'is-available'})
+    print(len(numseats))
     return;
 
 options = Options()
