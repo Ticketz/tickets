@@ -1,0 +1,81 @@
+import urllib.request as urllib2
+import json
+import csv
+import math
+import datetime
+import MySQLdb
+import urllib.request as urllib2
+import json
+import csv
+import math
+import pyodbc
+
+page = 1
+num_results = 5000
+pages = 1
+
+conn = pyodbc.connect('Driver={SQL Server};'
+                      'Server=LAPTOP-7DALFVFS\SQLEXPRESS;'
+                      'Database=Tickets;'
+                      'Trusted_Connection=yes;')
+
+cursor = conn.cursor()
+
+while page <= math.ceil(pages):
+
+    content = urllib2.urlopen('https://api.seatgeek.com/2/performers?per_page='+str(num_results)+'&type=band&has_upcoming_events=true&page='+str(page)+'&client_id=MTcxMjY3NDF8MTU2MTEzMDkxNS44Nw').read()
+    dict = json.loads(content)
+    pretty_print = json.dumps(dict, indent=2)
+
+    performer_dict = {}
+
+    total = dict.get('meta').get('total')
+    pages = total/num_results
+
+    # print(pages)
+    # print(page)
+
+
+    # prints all the performers
+    for key in dict.get('performers'):
+        inner_dict = json.loads(json.dumps(key,indent=2))
+
+        arr = [inner_dict.get('slug'),inner_dict.get('id'),inner_dict.get('score'),inner_dict.get('url')]
+
+        genres = []
+
+
+
+        # if the genre is not null gets all the genres and appends it to the array for the event
+        if not(inner_dict.get('genres') is None):
+            for genre in inner_dict.get('genres'):
+                # print(genre)
+                genres.append(genre.get('name'))
+
+        arr.extend(genres)
+
+
+        performer_dict[inner_dict.get('name')] = arr
+
+    # for performer in performer_dict.keys():
+    #     print(performer_dict[performer])
+        command = "insert into performers(Artist_Slug,Artist_ID,Artist_Score,URL)"
+        values = "\nvalues(\'"+inner_dict.get('slug')+"\',"+str(inner_dict.get('id'))+","+str(inner_dict.get('score'))+",\'"+inner_dict.get('url')+"\')"
+        print(command+values)
+        cursor.execute(command+values)
+        cursor.commit()
+
+
+
+    #
+    # with open('performer.csv','a',newline='') as f:
+    #     w = csv.writer(f, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+    #
+    #     for performer in performer_dict.keys():
+    #         performer_dict[performer].insert(0,performer)
+    #         w.writerow(performer_dict[performer])
+    #
+    page += 1
+
+conn.commit()
+conn.close()

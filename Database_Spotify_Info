@@ -1,0 +1,80 @@
+import spotipy
+import spotipy.util as util
+from spotipy.oauth2 import SpotifyClientCredentials
+import pyodbc
+import pandas as pd
+
+
+SPOTIPY_CLIENT_ID='2a8325be921441c3b19652c8b185b216'
+SPOTIPY_CLIENT_SECRET='97f156aed8ed4ecd9accdf9720a843b8'
+SPOTIPY_REDIRECT_URI="http://localhost:8888"
+scope = 'playlist-modify-public'
+username = 'mynamesdie'
+
+conn = pyodbc.connect('Driver={SQL Server};'
+                      'Server=LAPTOP-7DALFVFS\SQLEXPRESS;'
+                      'Database=Tickets;'
+                      'Trusted_Connection=yes;')
+
+cursor = conn.cursor()
+
+# passes in the credentials for the cleint credential flow
+client_credentials_manager = SpotifyClientCredentials(SPOTIPY_CLIENT_ID,SPOTIPY_CLIENT_SECRET)
+sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+performs = cursor.execute('SELECT * FROM [Tickets].[dbo].[performers] where Spotify_Popularity is null')
+columns = [column[0] for column in cursor.description]
+
+#print(columns)
+
+# for row in cursor.fetchmany(100):
+for row in performs.fetchall():
+    print(row)
+    results = sp.search(q=row[0], type='artist',limit = 1)
+    # for artist in sp.search(q=row[0], type='artist',limit = 1)['artists']['items']:
+    update = 'update [dbo].[performers]'
+    where = '\nWHERE Artist_ID = ' + str(row[1])
+    set = ''
+    # print(len(results['artists']['items'])  == 0)
+    if(len((results['artists']['items'])) == 0):
+        set = "\nSET Spotify_Popularity = -1 , Spotify_Followers = -1 "
+        command = update + set + where
+        cursor.execute(command )
+        cursor.commit()
+
+    else:
+        for artist in results['artists']['items']:
+            name = artist['name']
+            popularity = artist['popularity']
+            followers = artist['followers']['total']
+            # print('name: '+name+', pop: '+str(popularity)+', followers: '+str(followers))
+            set = "\nSET Spotify_Popularity = " + str(popularity)+" ,  Spotify_Followers = " + str(followers)
+            command = update + set + where
+            cursor.execute(command )
+            cursor.commit()
+
+
+
+
+
+#df = pd.DataFrame(performs)
+
+#UPDATE table_name
+#SET column1 = value1, column2 = value2, ...
+#WHERE condition;
+
+#    print(artist)
+
+
+
+#results = sp.search(q='apsdfkjaskdfn', type='artist')
+
+# loops through the artists and gets relevant information
+# Don't get genre here because get that from seatgeek
+#for artist in results['artists']['items']:
+    #name = artist['name']
+    #popularity = artist['popularity']
+    #followers = artist['followers']['total']
+    #print('name: '+name+', pop: '+str(popularity)+', followers: '+str(followers))
+
+conn.commit()
+conn.close()
